@@ -1,11 +1,10 @@
 import { ParamsDictionary } from 'express-serve-static-core'
 import { Request, Response } from 'express'
 import User from '~/models/schemas/User.schema'
-import databaseService from '~/services/database.services'
 import usersService from '~/services/users.services'
 import { RegisterReqBody } from '~/models/schemas/requests/User.requests'
 import { ObjectId } from 'mongodb'
-import {USERS_MESSAGES} from '~/constants/messages'
+import { USERS_MESSAGES } from '~/constants/messages'
 
 export const loginController = async (req: Request, res: Response) => {
   const user = req.user as User
