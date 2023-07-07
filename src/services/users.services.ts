@@ -63,12 +63,11 @@ class UsersService {
       }
     })
   }
-  private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signForgotPasswordToken(user_id: string) {
     return signToken({
       payload: {
         user_id,
-        token_type: TokenType.ForgotPasswordToken,
-        verify
+        token_type: TokenType.EmailVerifyToken
       },
       privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string,
       options: {
@@ -220,119 +219,15 @@ class UsersService {
       message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS
     }
   }
-  async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
-    const forgot_password_token = await this.signForgotPasswordToken({
-      user_id,
-      verify
-    })
+
+  async forgotPassword(user_id: string) {
+    const forgot_password_token = await this.signForgotPasswordToken(user_id)
     await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
-      {
-        $set: {
-          forgot_password_token,
-          updated_at: '$$NOW'
-        }
-      }
+      { $set: { forgot_password_token, updated_at: '$$NOW' } }
     ])
-    // Gửi email kèm đường link đến email người dùng: https://twitter.com/forgot-password?token=token
-    console.log('forgot_password_token: ', forgot_password_token)
+    console.log('forgot_password_token', forgot_password_token)
     return {
       message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
-    }
-  }
-  async resetPassword(user_id: string, password: string) {
-    databaseService.users.updateOne(
-      { _id: new ObjectId(user_id) },
-      {
-        $set: {
-          forgot_password_token: '',
-          password: hashPassword(password)
-        },
-        $currentDate: {
-          updated_at: true
-        }
-      }
-    )
-    return {
-      message: USERS_MESSAGES.RESET_PASSWORD_SUCCESS
-    }
-  }
-  async getMe(user_id: string) {
-    const user = await databaseService.users.findOne(
-      { _id: new ObjectId(user_id) },
-      {
-        projection: {
-          password: 0,
-          email_verify_token: 0,
-          forgot_password_token: 0
-        }
-      }
-    )
-    return user
-  }
-
-  async getProfile(username: string) {
-    const user = await databaseService.users.findOne(
-      { username },
-      {
-        projection: {
-          password: 0,
-          email_verify_token: 0,
-          forgot_password_token: 0,
-          verify: 0,
-          created_at: 0,
-          updated_at: 0
-        }
-      }
-    )
-    if (user === null) {
-      throw new ErrorWithStatus({
-        message: USERS_MESSAGES.USER_NOT_FOUND,
-        status: HTTP_STATUS.NOT_FOUND
-      })
-    }
-    return user
-  }
-
-  async updateMe(user_id: string, payload: UpdateMeReqBody) {
-    const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
-    const user = await databaseService.users.findOneAndUpdate(
-      {
-        _id: new ObjectId(user_id)
-      },
-      {
-        $set: {
-          ...(_payload as UpdateMeReqBody & { date_of_birth?: Date })
-        },
-        $currentDate: {
-          updated_at: true
-        }
-      },
-      {
-        returnDocument: 'after',
-        projection: {
-          password: 0,
-          email_verify_token: 0,
-          forgot_password_token: 0
-        }
-      }
-    )
-    return user.value
-  }
-
-  async changePassword(user_id: string, new_password: string) {
-    await databaseService.users.updateOne(
-      { _id: new ObjectId(user_id) },
-      {
-        $set: {
-          password: hashPassword(new_password)
-        },
-        $currentDate: {
-          updated_at: true
-        }
-      }
-    )
-    return {
-      message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS
     }
   }
 }
