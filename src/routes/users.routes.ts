@@ -1,4 +1,7 @@
-import { Router } from 'express'
+import { NextFunction, Request, Response, Router } from 'express'
+import { UserVerifyStatus } from '~/constants/enums'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { USERS_MESSAGES } from '~/constants/messages'
 import {
   forgotPasswordController,
   getMeController,
@@ -7,19 +10,25 @@ import {
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
+  updateMeController,
   verifyEmailController,
   verifyPasswordController
 } from '~/controllers/users.controllers'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
   forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
-  regetPasswordValidator,
   registerValidator,
+  resetPasswordValidator,
+  updateMeValidator,
+  verifiedUserValidator,
   verifyForgotPasswordTokenValidator
 } from '~/middlewares/users.middlewares'
+import { ErrorWithStatus } from '~/models/Errors'
+import { TokenPayload, UpdateMeReqBody } from '~/models/requests/User.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const usersRouter = Router()
@@ -49,7 +58,13 @@ usersRouter.post('/verify-email', emailVerifyTokenValidator, wrapRequestHandler(
 usersRouter.post('/resend-verify-email', accessTokenValidator, wrapRequestHandler(resendVerifyEmailController))
 usersRouter.post('/forgot-password', forgotPasswordValidator, wrapRequestHandler(forgotPasswordController))
 usersRouter.post('/verify-password', verifyForgotPasswordTokenValidator, wrapRequestHandler(verifyPasswordController))
-usersRouter.post('/reset-password', regetPasswordValidator, wrapRequestHandler(resetPasswordController))
+usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
 usersRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))
-
+usersRouter.patch(
+  '/me',
+  accessTokenValidator,
+  verifiedUserValidator,
+  updateMeValidator,
+  wrapRequestHandler(updateMeController)
+)
 export default usersRouter
