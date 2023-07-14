@@ -5,6 +5,7 @@ import { USERS_MESSAGES } from '~/constants/messages'
 import {
   forgotPasswordController,
   getMeController,
+  getProfileController,
   loginController,
   logoutController,
   registerController,
@@ -65,6 +66,18 @@ usersRouter.patch(
   accessTokenValidator,
   verifiedUserValidator,
   updateMeValidator,
+  filterMiddleware<UpdateMeReqBody>([
+    'name',
+    'date_of_birth',
+    'bio',
+    'location',
+    'website',
+    'username',
+    'avatar',
+    'cover_photo'
+  ]),
   wrapRequestHandler(updateMeController)
 )
+usersRouter.get('/:username', wrapRequestHandler(getProfileController))
+
 export default usersRouter
