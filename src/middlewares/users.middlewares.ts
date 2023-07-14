@@ -42,39 +42,42 @@ const passwordSchema: ParamSchema = {
   }
 }
 
-const confirmPasswordSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_IS_REQUIRED
-  },
-  isString: {
-    errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_A_STRING
-  },
-  isLength: {
-    options: {
-      min: 6,
-      max: 50
+const confirmPasswordSchema = (key = 'password'): ParamSchema => {
+  return {
+    notEmpty: {
+      errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_IS_REQUIRED
     },
-    errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_LENGTH_MUST_BE_FROM_6_TO_50
-  },
-  isStrongPassword: {
-    options: {
-      minLength: 6,
-      minLowercase: 1,
-      minUppercase: 1,
-      minNumbers: 1,
-      minSymbols: 1
+    isString: {
+      errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_A_STRING
     },
-    errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_STRONG
-  },
-  custom: {
-    options: (value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error(USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD)
+    isLength: {
+      options: {
+        min: 6,
+        max: 50
+      },
+      errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_LENGTH_MUST_BE_FROM_6_TO_50
+    },
+    isStrongPassword: {
+      options: {
+        minLength: 6,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1
+      },
+      errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_STRONG
+    },
+    custom: {
+      options: (value, { req }) => {
+        if (value !== req.body[key]) {
+          throw new Error(USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD)
+        }
+        return true
       }
-      return true
     }
   }
 }
+
 const forgotPasswordTokenSchema: ParamSchema = {
   trim: true,
   custom: {
@@ -254,7 +257,7 @@ export const registerValidator = validate(
         }
       },
       password: passwordSchema,
-      confirm_password: confirmPasswordSchema,
+      confirm_password: confirmPasswordSchema(),
       date_of_birth: dateOfBirthSchema
     },
     ['body']
@@ -410,7 +413,7 @@ export const resetPasswordValidator = validate(
   checkSchema(
     {
       password: passwordSchema,
-      confirm_password: confirmPasswordSchema,
+      confirm_password: confirmPasswordSchema(),
       forgot_password_token: forgotPasswordTokenSchema
     },
     ['body']
@@ -525,4 +528,34 @@ export const unfollowValidator = validate(
     },
     ['params']
   )
+)
+
+export const changePasswordValidator = validate(
+  checkSchema({
+    old_password: {
+      ...passwordSchema,
+      custom: {
+        options: async (value: string, { req }) => {
+          const { user_id } = (req as Request).decoded_authorization as TokenPayload
+          const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+          if (!user) {
+            throw new ErrorWithStatus({
+              message: USERS_MESSAGES.USER_NOT_FOUND,
+              status: HTTP_STATUS.NOT_FOUND
+            })
+          }
+          const { password } = user
+          const isMatch = hashPassword(value) === password
+          if (!isMatch) {
+            throw new ErrorWithStatus({
+              message: USERS_MESSAGES.OLD_PASSWORD_NOT_MATCH,
+              status: HTTP_STATUS.UNAUTHORIZED
+            })
+          }
+        }
+      }
+    },
+    new_password: passwordSchema,
+    confirm_new_password: confirmPasswordSchema('new_password')
+  })
 )

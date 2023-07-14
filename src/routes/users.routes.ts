@@ -3,6 +3,7 @@ import { UserVerifyStatus } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import {
+  changePasswordController,
   followController,
   forgotPasswordController,
   getMeController,
@@ -20,6 +21,7 @@ import {
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
+  changePasswordValidator,
   emailVerifyTokenValidator,
   followValidator,
   forgotPasswordValidator,
@@ -96,5 +98,12 @@ usersRouter.delete(
   verifiedUserValidator,
   unfollowValidator,
   wrapRequestHandler(unfollowController)
+)
+usersRouter.put(
+  '/change-password',
+  accessTokenValidator,
+  verifiedUserValidator,
+  changePasswordValidator,
+  wrapRequestHandler(changePasswordController)
 )
 export default usersRouter
