@@ -10,6 +10,7 @@ import {
   getProfileController,
   loginController,
   logoutController,
+  oauthController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
@@ -52,6 +53,8 @@ usersRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
  * Method: POST
  * Body: {name: string, email:string, password:string, confirm_password: string, date_of_birth: ISO8601}
  */
+usersRouter.get('/oauth/google', wrapRequestHandler(oauthController))
+
 usersRouter.post('/register', registerValidator, wrapRequestHandler(registerController))
 /**
  * Description. Logout a user
