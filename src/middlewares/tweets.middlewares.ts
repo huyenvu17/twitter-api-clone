@@ -64,7 +64,7 @@ export const createTweetValidator = validate(
           }
         }
       },
-      hastags: {
+      hashtags: {
         isArray: true,
         custom: {
           options: (value, { req }) => {
