@@ -1,10 +1,7 @@
 import { config } from 'dotenv'
 
 import databaseService from './database.services'
-import { TweetReqBody } from '~/models/requests/Tweet.requests'
-import Tweet from '~/models/schemas/Tweet.schema'
 import { ObjectId, WithId } from 'mongodb'
-import Hashtag from '~/models/schemas/Hashtag.schema'
 import Bookmark from '~/models/schemas/Bookmark.schema'
 config()
 
